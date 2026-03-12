@@ -200,11 +200,5 @@ The system uses local file-based storage instead of a server-based backend. This
 ## Planned Diagrams to Include
 The following supporting diagrams should be added to complete this document:
 
-- Architecture diagram
-- Class diagram
-- Sequence diagram for application initialisation
-- Sequence diagram for adding a review
 - Sequence diagram for deleting a review
-- Sequence diagram for tagging a review
-- Sequence diagram for sorting reviews
 - Use case diagram
