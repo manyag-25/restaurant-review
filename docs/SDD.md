@@ -23,7 +23,7 @@ The system follows a **3-tier architecture** consisting of:
 This architecture separates user interaction, application logic, and data persistence so that each part of the system remains easier to maintain, extend, and test.
 
 ### Architecture Diagram
-![Architecture Diagram](docs/images/architecture-diagram.jpg)
+![Architecture Diagram](docs/architecture/architecture-diagram.jpg)
 
 ---
 
