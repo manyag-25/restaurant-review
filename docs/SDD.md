@@ -90,7 +90,7 @@ Initialisation and Program End
 ![Sequence Diagram](docs/architecture/seq-diagram-add-review.png)
 Adding a Review
 
-*Placeholder: Insert sequence diagrams here.*\
+![Sequence Diagram](docs/architecture/seq-diagram-delete-review.png)
 Deleting a Review
 
 ![Sequence Diagram](docs/architecture/seq-diagram-add-tag.png)
