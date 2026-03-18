@@ -5,13 +5,14 @@ import java.util.Map;
 import java.util.Set;
 
 import application.command.AddReviewCommand;
-import application.command.AddTagCommand;
+import application.command.AddTagsCommand;
 import application.command.Command;
 import application.command.CommandType;
 import application.command.DeleteReviewCommand;
-import application.command.DeleteTagCommand;
+import application.command.DeleteTagsCommand;
 import application.command.ExitCommand;
 import application.command.ListReviewsCommand;
+import application.command.SortReviewsCommand;
 import application.command.UnknownCommand;
 
 /**
@@ -41,12 +42,12 @@ public class CommandParser {
             command = new AddReviewCommand(arguments);
             break;
         case ADD_TAG:
-            arguments = parseArguments(AddTagCommand.DELIMITERS, splitInput[1]);
-            command = new AddTagCommand(arguments);
+            arguments = parseArguments(AddTagsCommand.DELIMITERS, splitInput[1]);
+            command = new AddTagsCommand(arguments);
             break;
         case DELETE_TAG:
-            arguments = parseArguments(DeleteTagCommand.DELIMITERS, splitInput[1]);
-            command = new DeleteTagCommand(arguments);
+            arguments = parseArguments(DeleteTagsCommand.DELIMITERS, splitInput[1]);
+            command = new DeleteTagsCommand(arguments);
             break;
         case DELETE:
             arguments = parseArguments(DeleteReviewCommand.DELIMITERS, splitInput[1]);
@@ -54,6 +55,10 @@ public class CommandParser {
             break;
         case LIST:
             command = new ListReviewsCommand();
+            break;
+        case SORT:
+            arguments = parseArguments(SortReviewsCommand.DELIMITERS, splitInput[1]);
+            command = new SortReviewsCommand(arguments);
             break;
         case UNKNOWN:
         default:

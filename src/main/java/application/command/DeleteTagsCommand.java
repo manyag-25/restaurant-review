@@ -11,25 +11,25 @@ import application.storage.Storage;
 import java.util.Map;
 import java.util.Set;
 
-public class AddTagCommand extends Command {
+public class DeleteTagsCommand extends Command {
     public static final Set<String> DELIMITERS = Set.of("/default", "/tag");
     private final Map<String, String> commandArgs;
 
     /**
-     * Constructor for AddTagCommand class.
+     * Constructor for DeleteTagCommand class.
      *
      * @param commandArgs the arguments of the command
      */
-    public AddTagCommand(Map<String, String> commandArgs) {
+    public DeleteTagsCommand(Map<String, String> commandArgs) {
         this.commandArgs = commandArgs;
     }
 
 
     /**
-     * Executes the command to add tags to a review.
+     * Executes the command to delete tags from a review.
      *
      * <p>
-     * Tags that already exist in the review are not added again.
+     * Tags that do not exist in the review are not deleted.
      * </p>
      *
      * @param reviewList the list of reviews
@@ -47,9 +47,9 @@ public class AddTagCommand extends Command {
         String tagsAsString = commandArgs.get("/tag");
 
         int index = ArgumentParser.toInt(indexAsString);
-        Set<Tag> tagsToAdd = ArgumentParser.toTags(tagsAsString);
+        Set<Tag> tagsToDelete = ArgumentParser.toTags(tagsAsString);
 
-        if (tagsToAdd.isEmpty()) {
+        if (tagsToDelete.isEmpty()) {
             throw new InvalidArgumentException("No tags provided!");
         }
 
@@ -57,18 +57,18 @@ public class AddTagCommand extends Command {
         Review review = reviewList.getReview(index);
 
         //get the new tags that are already in the review
-        Set<Tag> existingTags = review.getMatchingTags(tagsToAdd);
+        Set<Tag> existingTags = review.getMatchingTags(tagsToDelete);
 
         //get the new tags that are not in the review
-        Set<Tag> nonExistentTags = review.getNonMatchingTags(tagsToAdd);
+        Set<Tag> nonExistentTags = review.getNonMatchingTags(tagsToDelete);
 
-        //add the non-existent tags to the review
-        nonExistentTags.forEach(review::addTag);
+        //delete the existing tags from the review
+        existingTags.forEach(review::removeTag);
 
         return String.format("""
-                Existing tags not added: %s
-                New tags added: %s
+                Tags that do not exist in review: %s
+                Tags deleted: %s
                 Updated review:
-                %s""", existingTags, nonExistentTags, review);
+                %s""", nonExistentTags, existingTags, review);
     }
 }

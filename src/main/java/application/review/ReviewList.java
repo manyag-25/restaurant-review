@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import application.exception.InvalidArgumentException;
@@ -155,29 +156,29 @@ public class ReviewList {
     }
 
     /**
-     * Returns a new list of reviews sorted by overall score in descending order.
+     * Returns a new list of reviews sorted by the specified criterion in descending order.
      *
-     * @return a new list of reviews sorted by overall score in descending order.
+     * @param sortCriterion the criterion to sort by
+     * @return a new list of reviews sorted by the specified criterion in descending order.
      */
-    public List<Review> sortByDescendingOverallScore() {
-        return reviews.stream()
-                .sorted(Comparator.comparingDouble(
-                        (Review review) -> review.getRating().getOverallScore())
-                        .reversed())
-                .collect(Collectors.toList());
+    public ReviewList sortByDescending(Function<Review, Double> sortCriterion) {
+        List<Review> sortedList = reviews.stream()
+                .sorted(Comparator.comparing(sortCriterion).reversed())
+                .toList();
+        return new ReviewList(sortedList);
     }
 
     /**
-     * Returns a new list of reviews sorted by overall score in ascending order.
+     * Returns a new list of reviews sorted by the specified criterion in ascending order.
      *
-     * @return a new list of reviews sorted by overall score in ascending order.
+     * @param sortCriterion the criterion to sort by
+     * @return a new list of reviews sorted by the specified criterion in ascending order.
      */
-    public List<Review> sortByAscendingOverallScore() {
-        return reviews.stream()
-                .sorted(Comparator.comparingDouble(
-                                (Review review) -> review.getRating().getOverallScore())
-                )
-                .collect(Collectors.toList());
+    public ReviewList sortByAscending(Function<Review, Double> sortCriterion) {
+        List<Review> sortedList = reviews.stream()
+                .sorted(Comparator.comparing(sortCriterion))
+                .toList();
+        return new ReviewList(sortedList);
     }
 
     /**
