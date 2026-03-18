@@ -10,76 +10,76 @@ public class Rating {
     public static final int RATING_MIN = 1;
     public static final int RATING_MAX = 5;
 
-    private final int foodRating;
-    private final int cleanlinessRating;
-    private final int serviceRating;
+    private final int foodScore;
+    private final int cleanlinessScore;
+    private final int serviceScore;
 
     /**
-     * Constructs a {@code Rating} with ratings for food, cleanliness, and service.
+     * Constructs a {@code Rating} with scores for food, cleanliness, and service.
      *
-     * @param foodRating the food rating
-     * @param cleanlinessRating the cleanliness rating
-     * @param serviceRating the service rating
+     * @param foodScore the food score
+     * @param cleanlinessScore the cleanliness rating
+     * @param serviceScore the service rating
      * @throws IllegalArgumentException if any rating is invalid
      */
-    public Rating(int foodRating, int cleanlinessRating, int serviceRating) {
-        if (!isValidRating(foodRating)
-                || !isValidRating(cleanlinessRating)
-                || !isValidRating(serviceRating)) {
+    public Rating(int foodScore, int cleanlinessScore, int serviceScore) throws IllegalArgumentException {
+        if (!isValidScore(foodScore)
+                || !isValidScore(cleanlinessScore)
+                || !isValidScore(serviceScore)) {
             throw new IllegalArgumentException(
                     "All ratings must be integers between " + RATING_MIN + " and " + RATING_MAX + ".");
         }
 
-        this.foodRating = foodRating;
-        this.cleanlinessRating = cleanlinessRating;
-        this.serviceRating = serviceRating;
+        this.foodScore = foodScore;
+        this.cleanlinessScore = cleanlinessScore;
+        this.serviceScore = serviceScore;
     }
 
     /**
-     * Returns whether the given rating is valid.
+     * Returns whether the given score is valid.
      *
-     * @param rating the rating to validate
+     * @param score the score to validate
      * @return {@code true} if the rating is between 1 and 5 inclusive,
      *         {@code false} otherwise
      */
-    public static boolean isValidRating(int rating) {
-        return rating >= RATING_MIN && rating <= RATING_MAX;
+    public static boolean isValidScore(int score) {
+        return score >= RATING_MIN && score <= RATING_MAX;
     }
 
     /**
-     * Returns the food rating.
+     * Returns the food score.
      *
-     * @return the food rating
+     * @return the food score
      */
-    public int getFoodRating() {
-        return foodRating;
+    public int getFoodScore() {
+        return foodScore;
     }
 
     /**
-     * Returns the cleanliness rating.
+     * Returns the cleanliness score.
      *
-     * @return the cleanliness rating
+     * @return the cleanliness score
      */
-    public int getCleanlinessRating() {
-        return cleanlinessRating;
+    public int getCleanlinessScore() {
+        return cleanlinessScore;
     }
 
     /**
-     * Returns the service rating.
+     * Returns the service score.
      *
-     * @return the service rating
+     * @return the service score
      */
-    public int getServiceRating() {
-        return serviceRating;
+    public int getServiceScore() {
+        return serviceScore;
     }
 
     /**
-     * Returns the derived overall rating.
+     * Returns the derived overall score.
      *
      * @return the average of the three category ratings
      */
-    public double getOverallRating() {
-        return (foodRating + cleanlinessRating + serviceRating) / 3.0;
+    public double getOverallScore() {
+        return (foodScore + cleanlinessScore + serviceScore) / 3.0;
     }
 
     /**
@@ -91,10 +91,10 @@ public class Rating {
     public String toString() {
         return String.format(
                 "Food: %d | Cleanliness: %d | Service: %d | Overall: %.1f",
-                foodRating,
-                cleanlinessRating,
-                serviceRating,
-                getOverallRating()
+                getFoodScore(),
+                getCleanlinessScore(),
+                getServiceScore(),
+                getOverallScore()
         );
     }
 }
