@@ -6,7 +6,6 @@ import java.time.format.DateTimeParseException;
 
 import application.exception.InvalidArgumentException;
 import application.exception.MissingArgumentException;
-import application.review.Rating;
 
 /**
  * ArgumentParser class containing generic methods for parsing inputs.
@@ -36,10 +35,10 @@ public class ArgumentParser {
     /**
      * Checks if the specified string is null or empty.
      * @param string the string to check
-     * @return true if the string is null or empty, false otherwise
+     * @return true if the string is not null or empty, false otherwise
      */
-    public static boolean isInvalidString(String string) {
-        return string == null || string.isBlank();
+    public static boolean isValidString(String string) {
+        return string != null && !string.isBlank();
     }
 
     /**
