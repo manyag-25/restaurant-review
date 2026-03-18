@@ -132,19 +132,6 @@ public class Review {
     }
 
     /**
-     * Returns whether this review contains the specified tag.
-     *
-     * @param tag the tag to check for
-     * @return {@code true} if the review contains the tag, {@code false} otherwise
-     */
-    public boolean containsTag(Tag tag) {
-        if (tag == null) {
-            return false;
-        }
-        return tags.contains(tag);
-    }
-
-    /**
      * Marks this review as resolved.
      */
     public void markResolved() {
@@ -159,7 +146,26 @@ public class Review {
     }
 
     /**
+     * Returns whether this review contains all of the specified tags.
+     * @param tagsToMatch the set of tags to match
+     * @return true if this review contains all of the specified tags, false otherwise
+     */
+    public boolean containsAllMatchingTags(Set<Tag> tagsToMatch) {
+        return tags.containsAll(tagsToMatch);
+    }
+
+    /**
+     * Returns whether this review contains any of the specified tags.
+     * @param tagsToMatch the set of tags to match
+     * @return true if this review contains any of the specified tags, false otherwise
+     */
+    public boolean containsNoMatchingTags(Set<Tag> tagsToMatch) {
+        return tagsToMatch.stream().noneMatch(tags::contains);
+    }
+
+    /**
      * Returns a set of tags that match existing tags in this review.
+     *
      * @param tagsToMatch the set of tags to match
      * @return a set of tags that match existing tags in this review
      */
@@ -171,6 +177,7 @@ public class Review {
 
     /**
      * Returns a set of tags that do not match existing tags in this review.
+     *
      * @param tagsToMatch the set of tags to match
      * @return a set of tags that do not match existing tags in this review
      */

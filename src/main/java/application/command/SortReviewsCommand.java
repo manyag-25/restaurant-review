@@ -1,8 +1,8 @@
 package application.command;
 
 import application.exception.InvalidArgumentException;
+import application.review.OperationCriterion;
 import application.review.ReviewList;
-import application.review.SortCriterion;
 import application.review.SortOrder;
 import application.storage.Storage;
 
@@ -15,7 +15,7 @@ import java.util.Set;
 public class SortReviewsCommand extends Command {
     public static final Set<String> DELIMITERS = Set.of("/default", "/by");
     private final SortOrder sortOrder;
-    private final SortCriterion sortCriterion;
+    private final OperationCriterion sortCriterion;
 
 
     /**
@@ -28,7 +28,7 @@ public class SortReviewsCommand extends Command {
         String sortCriterionString = commandArgs.get("/by");
 
         this.sortOrder = SortOrder.getSortOrder(sortOrderString);
-        this.sortCriterion = SortCriterion.getSortCriterion(sortCriterionString);
+        this.sortCriterion = OperationCriterion.getOperationCriterion(sortCriterionString);
     }
 
     /**

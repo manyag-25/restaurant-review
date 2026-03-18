@@ -11,6 +11,7 @@ public enum CommandType {
     ADD_TAG("addtag"),
     DELETE_TAG("deletetag"),
     DELETE("delete"),
+    FILTER("filter"),
     LIST("list"),
     SORT("sort"),
     UNKNOWN("unknown");

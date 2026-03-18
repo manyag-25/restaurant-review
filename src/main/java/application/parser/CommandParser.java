@@ -11,6 +11,7 @@ import application.command.CommandType;
 import application.command.DeleteReviewCommand;
 import application.command.DeleteTagsCommand;
 import application.command.ExitCommand;
+import application.command.FilterReviewsCommand;
 import application.command.ListReviewsCommand;
 import application.command.SortReviewsCommand;
 import application.command.UnknownCommand;
@@ -57,6 +58,10 @@ public class CommandParser {
         case DELETE:
             arguments = parseArguments(DeleteReviewCommand.DELIMITERS, splitInput[1]);
             command = new DeleteReviewCommand(arguments);
+            break;
+        case FILTER:
+            arguments = parseArguments(FilterReviewsCommand.DELIMITERS, splitInput[1]);
+            command = new FilterReviewsCommand(arguments);
             break;
         case LIST:
             command = new ListReviewsCommand();
