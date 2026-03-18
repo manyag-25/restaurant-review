@@ -1,14 +1,15 @@
 package application.review;
 
 import java.util.Collections;
-import java.util.LinkedHashSet;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
  * Represents a single anonymous customer review.
- *
+ * <p>
  * Each review contains a structured rating, a written review body,
  * zero or more tags, and a resolved status for owner-side tracking.
+ * </p>
  */
 public class Review {
     private final String reviewBody;
@@ -17,15 +18,17 @@ public class Review {
     private boolean isResolved;
 
     /**
-     * Constructs a {@code Review} with the specified review body and rating.
-     *
-     * The review is created with no tags and an unresolved status.
+     * Constructs a {@code Review} with the specified review body, rating and tags.
+     * <p>
+     * The review is created with an unresolved status.
+     * </p>
      *
      * @param reviewBody the written review content
      * @param rating the structured rating for the review
+     * @param tags the set of tags associated with the review
      * @throws IllegalArgumentException if the review body is null or blank
      */
-    public Review(String reviewBody, Rating rating) {
+    public Review(String reviewBody, Rating rating, Set<Tag> tags) throws IllegalArgumentException {
         if (reviewBody == null || reviewBody.isBlank()) {
             throw new IllegalArgumentException("Review body cannot be null or blank.");
         }
@@ -35,7 +38,31 @@ public class Review {
 
         this.reviewBody = reviewBody.trim();
         this.rating = rating;
-        this.tags = new LinkedHashSet<>();
+        this.tags = tags;
+        this.isResolved = false;
+    }
+
+    /**
+     * Constructs a {@code Review} with the specified review body and rating.
+     * <p>
+     * The review is created with no tags and an unresolved status.
+     * </p>
+     *
+     * @param reviewBody the written review content
+     * @param rating the structured rating for the review
+     * @throws IllegalArgumentException if the review body is null or blank
+     */
+    public Review(String reviewBody, Rating rating) throws IllegalArgumentException {
+        if (reviewBody == null || reviewBody.isBlank()) {
+            throw new IllegalArgumentException("Review body cannot be null or blank.");
+        }
+        if (rating == null) {
+            throw new IllegalArgumentException("Rating cannot be null.");
+        }
+
+        this.reviewBody = reviewBody.trim();
+        this.rating = rating;
+        this.tags = new HashSet<>();
         this.isResolved = false;
     }
 
