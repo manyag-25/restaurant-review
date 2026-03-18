@@ -155,12 +155,39 @@ public class ReviewList {
     }
 
     /**
+     * Sorts the given review list based on the given criterion and sort order.
+     *
+     * @param sortCriterion the criterion to sort by
+     * @param sortOrder the sort order (ascending or descending)
+     * @param reviews the list of reviews to sort
+     * @return a new sorted list of reviews
+     * @throws InvalidArgumentException if the sort order is invalid
+     */
+    public ReviewList sort(
+            SortCriterion sortCriterion,
+            SortOrder sortOrder,
+            ReviewList reviews
+    ) throws InvalidArgumentException {
+        Function<Review, Double> sortCriterionFunction = getSortCriterionFunction(sortCriterion);
+
+        switch (sortOrder) {
+        case ASCENDING:
+            return reviews.sortByAscending(sortCriterionFunction);
+        case DESCENDING:
+            return reviews.sortByDescending(sortCriterionFunction);
+        case UNKNOWN:
+        default:
+            throw new InvalidArgumentException("Invalid sort order!");
+        }
+    }
+
+    /**
      * Returns a new list of reviews sorted by the specified criterion in descending order.
      *
      * @param sortCriterion the criterion to sort by
      * @return a new list of reviews sorted by the specified criterion in descending order.
      */
-    public ReviewList sortByDescending(Function<Review, Double> sortCriterion) {
+    private ReviewList sortByDescending(Function<Review, Double> sortCriterion) {
         List<Review> sortedList = reviews.stream()
                 .sorted(Comparator.comparing(sortCriterion).reversed())
                 .toList();
@@ -173,11 +200,43 @@ public class ReviewList {
      * @param sortCriterion the criterion to sort by
      * @return a new list of reviews sorted by the specified criterion in ascending order.
      */
-    public ReviewList sortByAscending(Function<Review, Double> sortCriterion) {
+    private ReviewList sortByAscending(Function<Review, Double> sortCriterion) {
         List<Review> sortedList = reviews.stream()
                 .sorted(Comparator.comparing(sortCriterion))
                 .toList();
         return new ReviewList(sortedList);
+    }
+
+    /**
+     * Returns a function that extracts the sort criterion value from a review.
+     * @param sortCriterion the sort criterion
+     * @return a function that extracts the sort criterion value from a review
+     */
+    private static Function<Review, Double> getSortCriterionFunction(SortCriterion sortCriterion) {
+        Function<Review, Double> sortCriterionFunction;
+
+        switch (sortCriterion) {
+        case OVERALL_SCORE:
+            sortCriterionFunction = review -> review.getRating().getOverallScore();
+            break;
+        case FOOD_SCORE:
+            sortCriterionFunction = review -> review.getRating().getFoodScore();
+            break;
+        case SERVICE_SCORE:
+            sortCriterionFunction = review -> review.getRating().getServiceScore();
+            break;
+        case CLEANLINESS_SCORE:
+            sortCriterionFunction = review -> review.getRating().getCleanlinessScore();
+            break;
+        case TAG_COUNT:
+            sortCriterionFunction = review -> (double) review.getTags().size();
+            break;
+        default:
+            //default to overall score
+            sortCriterionFunction = review -> review.getRating().getOverallScore();
+        }
+
+        return sortCriterionFunction;
     }
 
     /**

@@ -51,11 +51,11 @@ public class DeleteTagsCommand extends Command {
      */
     @Override
     public String execute(
-            ReviewList reviewList,
+            ReviewList reviews,
             Storage storage
     ) throws InvalidArgumentException {
         //get the review object and its tags
-        Review review = reviewList.getReview(index);
+        Review review = reviews.getReview(index);
 
         //get the new tags that are already in the review
         Set<Tag> existingTags = review.getMatchingTags(tagsToDelete);

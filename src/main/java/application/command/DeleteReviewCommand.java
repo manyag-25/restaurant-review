@@ -33,17 +33,17 @@ public class DeleteReviewCommand extends Command {
     /**
      * Executes the command to delete a review from the list.
      *
-     * @param reviewList the list of reviews
+     * @param reviews the list of reviews
      * @param storage the storage object
      * @return a string representation of the command result
      * @throws InvalidArgumentException if the index is in the wrong format
      */
     @Override
     public String execute(
-            ReviewList reviewList,
+            ReviewList reviews,
             Storage storage
     ) throws InvalidArgumentException {
-        Review review = reviewList.deleteReview(index);
+        Review review = reviews.deleteReview(index);
 
         return String.format("%s\ndeleted!", review);
     }

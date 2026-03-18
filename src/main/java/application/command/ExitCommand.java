@@ -20,12 +20,12 @@ public class ExitCommand extends Command {
     /**
      * Returns a message indicating that the program has exited.
      *
-     * @param reviewList the list of reviews
+     * @param reviews the list of reviews
      * @param storage the storage object
      * @return a string indicating that the program has exited
      */
     @Override
-    public String execute(ReviewList reviewList, Storage storage) {
+    public String execute(ReviewList reviews, Storage storage) {
         return "Goodbye!";
     }
 }

@@ -2,9 +2,8 @@ package application.command;
 
 import application.exception.InvalidArgumentException;
 import application.review.ReviewList;
-import application.sorter.ReviewSorter;
-import application.sorter.SortCriterion;
-import application.sorter.SortOrder;
+import application.review.SortCriterion;
+import application.review.SortOrder;
 import application.storage.Storage;
 
 import java.util.Map;
@@ -35,17 +34,17 @@ public class SortReviewsCommand extends Command {
     /**
      * Executes the command to sort reviews.
      *
-     * @param reviewList the list of reviews
+     * @param reviews the list of reviews
      * @param storage the storage object
      * @return a string representation of the command result
      * @throws InvalidArgumentException if any argument is in the wrong format
      */
     @Override
     public String execute(
-            ReviewList reviewList,
+            ReviewList reviews,
             Storage storage
     ) throws InvalidArgumentException {
-        ReviewList sortedReviewList = ReviewSorter.sort(sortCriterion, sortOrder, reviewList);
+        ReviewList sortedReviewList = reviews.sort(sortCriterion, sortOrder, reviews);
 
         return String.format("""
                 Sorted by %s in %s order:

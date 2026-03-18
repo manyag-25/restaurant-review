@@ -48,14 +48,14 @@ public class AddReviewCommand extends Command {
     /**
      * Executes the command to add a review to the list.
      *
-     * @param reviewList the list of reviews
+     * @param reviews the list of reviews
      * @param storage the storage object
      * @return a string representation of the command result
      * @throws InvalidArgumentException if any argument is in the wrong format
      */
     @Override
     public String execute(
-            ReviewList reviewList,
+            ReviewList reviews,
             Storage storage
     ) throws InvalidArgumentException {
         //create a new Rating object with scores
@@ -64,7 +64,7 @@ public class AddReviewCommand extends Command {
         //create a new Review object
         Review review = new Review(reviewBody, rating, tagsToAdd);
 
-        reviewList.addReview(review);
+        reviews.addReview(review);
 
         return String.format("Added review to list:\n%s", review);
     }

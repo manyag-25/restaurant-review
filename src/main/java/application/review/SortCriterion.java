@@ -1,4 +1,4 @@
-package application.sorter;
+package application.review;
 
 import application.parser.ArgumentParser;
 
