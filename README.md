@@ -13,7 +13,7 @@
 > e.g. if the command specifies `list 123`, it will be interpreted as `list`.
 > - Duchess supports partial matching of some arguments for advanced users.\
 > e.g. `a`, `asc` and `as` will all match the `SORT_ORDER` `ascending` command.
-> - Arguments wrapped in `[SQUARE_BRACKETS]` are optional and can be omitted.\
+> - Arguments wrapped in `[SQUARE_BRACKETS]` are optional and can be omitted.
 > - Arguments with trailing ellipsis `...` can include multiple arguments.\
 > e.g. `TAG1, TAG2, ...` indicates that multiple tags can be provided.
 > - `SCORE` must be a positive integer between 1.0 and 5.0.
@@ -27,7 +27,7 @@ Format: `review [REVIEW_BODY] /food SCORE /clean SCORE /service SCORE [/tag TAG1
 Format: `delete INDEX`
 
 ## Listing all reviews
-`list`: Lists all reviews in the database.
+`list`: Lists all reviews in the database.\
 Format: `list`
 
 ## Add Tags to a Review
@@ -82,14 +82,16 @@ All arguments are optional. If any argument is specified, the filtered reviews m
 > - `cleanliness scores >=4` (no space between `>=` and `4`)
 > - `invalid == 5` (invalid `CRITERION`)
 > - `overall scores = 3` (invalid `COMPARATOR`)
-> 
-> Separate `CONDITION`s with commas to specify multiple conditions.
+
+> [!NOTE]
+> **Notes about comma-separated values:**\
+> Separate `CONDITION`s or `TAG`s with commas to specify multiple values.
 > Spaces between commas are optional.
 >
-> Example of valid conditions:
-> - `food scores > 3.5, cleanliness scores >= 4`
-> - `cleanliness scores >= 4, service scores == 5, overall scores < 3
+> Example of valid comma-separated values:
+> - `CONDITION`: `food scores > 3.5, cleanliness scores >= 4`
+> - `TAG`: `isGood, good good, helloTag3`
 
 ## Exiting the program
-`exit`: Exits the program.
+`exit`: Exits the program.\
 Format: `exit`
