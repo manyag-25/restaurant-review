@@ -211,4 +211,84 @@ public class CommandTest {
         Command cmd = new UnknownCommand();
         assertEquals("I'm sorry, I don't understand that command.", cmd.execute(reviewList, storage));
     }
+
+    @Test
+    public void resolveReviewCommand_execute_success() throws InvalidArgumentException, MissingArgumentException {
+        addReviewCommand_execute_success(); // adds 1 review, index 1
+        
+        Map<String, String> args = new HashMap<>();
+        args.put("/default", "1");
+        ResolveReviewCommand cmd = new ResolveReviewCommand(args);
+        String output = cmd.execute(reviewList, storage);
+        
+        assertTrue(output.contains("marked as resolved!"));
+        assertTrue(reviewList.getReview(1).isResolved());
+    }
+
+    @Test
+    public void resolveReviewCommand_invalidIndex_throwsException() {
+        Map<String, String> args = new HashMap<>();
+        args.put("/default", "not_a_number");
+        
+        assertThrows(InvalidArgumentException.class, () -> new ResolveReviewCommand(args));
+    }
+
+    @Test
+    public void resolveReviewCommand_missingIndex_throwsException() {
+        Map<String, String> args = new HashMap<>();
+        
+        assertThrows(MissingArgumentException.class, () -> new ResolveReviewCommand(args));
+    }
+
+    @Test
+    public void resolveReviewCommand_outOfBoundsIndex_throwsException() throws InvalidArgumentException, MissingArgumentException {
+        addReviewCommand_execute_success(); // adds 1 review, index 1
+        
+        Map<String, String> args = new HashMap<>();
+        args.put("/default", "2"); // out of bounds
+        ResolveReviewCommand cmd = new ResolveReviewCommand(args);
+        
+        assertThrows(InvalidArgumentException.class, () -> cmd.execute(reviewList, storage));
+    }
+
+    @Test
+    public void unresolveReviewCommand_execute_success() throws InvalidArgumentException, MissingArgumentException {
+        addReviewCommand_execute_success(); // adds 1 review, index 1
+        reviewList.markResolved(1);
+        assertTrue(reviewList.getReview(1).isResolved());
+        
+        Map<String, String> args = new HashMap<>();
+        args.put("/default", "1");
+        UnresolveReviewCommand cmd = new UnresolveReviewCommand(args);
+        String output = cmd.execute(reviewList, storage);
+        
+        assertTrue(output.contains("marked as outstanding!"));
+        assertFalse(reviewList.getReview(1).isResolved());
+    }
+
+    @Test
+    public void unresolveReviewCommand_invalidIndex_throwsException() {
+        Map<String, String> args = new HashMap<>();
+        args.put("/default", "not_a_number");
+        
+        assertThrows(InvalidArgumentException.class, () -> new UnresolveReviewCommand(args));
+    }
+
+    @Test
+    public void unresolveReviewCommand_missingIndex_throwsException() {
+        Map<String, String> args = new HashMap<>();
+        
+        assertThrows(MissingArgumentException.class, () -> new UnresolveReviewCommand(args));
+    }
+
+    @Test
+    public void unresolveReviewCommand_outOfBoundsIndex_throwsException() throws InvalidArgumentException, MissingArgumentException {
+        addReviewCommand_execute_success(); // adds 1 review, index 1
+        
+        Map<String, String> args = new HashMap<>();
+        args.put("/default", "2"); // out of bounds
+        UnresolveReviewCommand cmd = new UnresolveReviewCommand(args);
+        
+        assertThrows(InvalidArgumentException.class, () -> cmd.execute(reviewList, storage));
+    }
 }

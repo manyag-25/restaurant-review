@@ -64,6 +64,18 @@ public class CommandParserTest {
     }
 
     @Test
+    public void getCommand_resolve_returnsResolveReviewCommand() throws InvalidArgumentException, MissingArgumentException {
+        Command command = CommandParser.getCommand("resolve 1");
+        assertTrue(command instanceof ResolveReviewCommand);
+    }
+
+    @Test
+    public void getCommand_unresolve_returnsUnresolveReviewCommand() throws InvalidArgumentException, MissingArgumentException {
+        Command command = CommandParser.getCommand("unresolve 1");
+        assertTrue(command instanceof UnresolveReviewCommand);
+    }
+
+    @Test
     public void getCommand_emptyInput_returnsUnknownCommand() throws InvalidArgumentException, MissingArgumentException {
         assertTrue(CommandParser.getCommand("") instanceof UnknownCommand);
         assertTrue(CommandParser.getCommand("   ") instanceof UnknownCommand);
