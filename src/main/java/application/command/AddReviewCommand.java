@@ -17,51 +17,54 @@ import application.storage.Storage;
  */
 public class AddReviewCommand extends Command {
     public static final Set<String> DELIMITERS = Set.of("/default", "/food", "/clean", "/service", "/tag");
-    private final Map<String, String> commandArgs;
+    private final String reviewBody;
+    private final Double foodScore;
+    private final Double cleanlinessScore;
+    private final Double serviceScore;
+    private final Set<Tag> tagsToAdd;
 
     /**
      * Constructor for AddReviewCommand class.
      *
      * @param commandArgs the arguments of the command
+     * @throws InvalidArgumentException if any argument is in the wrong format
+     * @throws MissingArgumentException if any argument is missing
      */
-    public AddReviewCommand(Map<String, String> commandArgs) {
-        this.commandArgs = commandArgs;
+    public AddReviewCommand(Map<String, String> commandArgs)
+            throws InvalidArgumentException, MissingArgumentException {
+        String reviewBody = commandArgs.get("/default");
+        String foodScoreAsString = commandArgs.get("/food");
+        String cleanlinessScoreAsString = commandArgs.get("/clean");
+        String serviceScoreAsString = commandArgs.get("/service");
+        String tagsToAddAsString = commandArgs.get("/tag");
+
+        this.reviewBody = reviewBody;
+        this.foodScore = ArgumentParser.toDouble(foodScoreAsString);
+        this.cleanlinessScore = ArgumentParser.toDouble(cleanlinessScoreAsString);
+        this.serviceScore = ArgumentParser.toDouble(serviceScoreAsString);
+        this.tagsToAdd = Tag.toTags(tagsToAddAsString);
     }
 
     /**
      * Executes the command to add a review to the list.
      *
-     * @param reviewList the list of reviews
+     * @param reviews the list of reviews
      * @param storage the storage object
      * @return a string representation of the command result
-     * @throws MissingArgumentException if any argument is missing
      * @throws InvalidArgumentException if any argument is in the wrong format
      */
     @Override
     public String execute(
-            ReviewList reviewList,
+            ReviewList reviews,
             Storage storage
-    ) throws MissingArgumentException, InvalidArgumentException {
-        //get all the arguments
-        String reviewBody = commandArgs.get("/default");
-        String foodScoreAsString = commandArgs.get("/food");
-        String cleanlinessScoreAsString = commandArgs.get("/clean");
-        String serviceScoreAsString = commandArgs.get("/service");
-        String tagsAsString = commandArgs.get("/tag");
-
+    ) throws InvalidArgumentException {
         //create a new Rating object with scores
-        Rating rating = ArgumentParser.toRating(
-                foodScoreAsString,
-                cleanlinessScoreAsString,
-                serviceScoreAsString
-        );
-
-        Set<Tag> tags = ArgumentParser.toTags(tagsAsString);
+        Rating rating = new Rating(foodScore, cleanlinessScore, serviceScore);
 
         //create a new Review object
-        Review review = new Review(reviewBody, rating, tags);
+        Review review = new Review(reviewBody, rating, tagsToAdd);
 
-        reviewList.addReview(review);
+        reviews.addReview(review);
 
         return String.format("Added review to list:\n%s", review);
     }

@@ -24,13 +24,15 @@ public class Main {
         while (shouldContinue) {
             System.out.print("> ");
             String userInput = scanner.nextLine();
-            Command command = CommandParser.getCommand(userInput);
             try {
+                Command command = CommandParser.getCommand(userInput);
                 String output = command.execute(reviewList, storage);
                 System.out.println(output);
                 shouldContinue = !command.isTerminatingCommand();
-            } catch (InvalidArgumentException | MissingArgumentException | IOException e) {
+            } catch (InvalidArgumentException | IOException | MissingArgumentException e) {
                 System.out.println(e.getMessage());
+            } catch (Exception e) {
+                System.out.println("An unexpected error occurred: " + e.getMessage());
             }
         }
     }

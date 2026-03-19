@@ -25,14 +25,28 @@ public class Rating {
      * @param serviceScore the service rating
      * @throws InvalidArgumentException if any rating is invalid
      */
-    public Rating(double foodScore, double cleanlinessScore, double serviceScore) throws InvalidArgumentException {
-        if (!isValidScore(foodScore)
-                || !isValidScore(cleanlinessScore)
-                || !isValidScore(serviceScore)) {
+    public Rating(double foodScore,
+                  double cleanlinessScore,
+                  double serviceScore
+    ) throws InvalidArgumentException {
+        if (!isValidScore(foodScore)) {
             throw new InvalidArgumentException(
-                    "All ratings must be numbers between " + RATING_MIN + " and " + RATING_MAX + ".");
+                    String.format("Food Score must be numbers between %.1f and %.1f.", RATING_MIN, RATING_MAX)
+            );
         }
 
+        if (!isValidScore(cleanlinessScore)) {
+            throw new InvalidArgumentException(
+                    String.format("Cleanliness Score must be numbers between %.1f and %.1f.", RATING_MIN, RATING_MAX)
+            );
+        }
+
+        if (!isValidScore(serviceScore)) {
+            throw new InvalidArgumentException(
+                    String.format("Service Score must be numbers between %.1f and %.1f.", RATING_MIN, RATING_MAX)
+            );
+        }
+        
         this.foodScore = foodScore;
         this.cleanlinessScore = cleanlinessScore;
         this.serviceScore = serviceScore;

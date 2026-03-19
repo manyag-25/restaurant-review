@@ -1,11 +1,10 @@
 package application.review;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import application.condition.Condition;
 import application.exception.InvalidArgumentException;
 
 /**
@@ -114,70 +113,99 @@ public class ReviewList {
     }
 
     /**
-     * Returns all reviews that contain the specified tag.
+     * Filters the list of reviews based on the specified criteria.
      *
-     * @param tag the tag to filter by
-     * @return a list of reviews containing the tag
-     * @throws IllegalArgumentException if the tag is null
-     */
-    public List<Review> filterByTag(Tag tag) {
-        if (tag == null) {
-            throw new IllegalArgumentException("Tag cannot be null.");
-        }
-
-        return reviews.stream()
-                .filter(review -> review.containsTag(tag))
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Returns all reviews with the specified resolved status.
+     * <p>
+     * A review must match ALL criteria to be included in the filtered list.
+     * 1. If tagsToInclude is not empty, the review must contain ALL tags in tagsToInclude.
+     * 2. If tagsToExclude is not empty, the review must contain NONE of the tags in tagsToExclude.
+     * 3. If filterConditions is not empty, the review must satisfy ALL conditions.
+     * 4. If isResolved is not null, the review must match the resolved status.
+     * </p>
      *
-     * @param isResolved the resolved status to match
-     * @return a list of reviews matching the resolved status
+     * @param tagsToInclude 1 or more tags to include in the filter
+     * @param tagsToExclude 1 or more tags to exclude from the filter
+     * @param filterConditions 1 or more Criterion to filter by
+     * @param isResolved whether to filter by resolved status
+     * @return a filtered list of reviews that meet the specified criteria
      */
-    public List<Review> filterByResolvedStatus(boolean isResolved) {
-        return reviews.stream()
-                .filter(review -> review.isResolved() == isResolved)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Returns all reviews whose overall score is at least the specified minimum.
-     *
-     * @param minimumScore the minimum overall score
-     * @return a list of reviews meeting the score threshold
-     */
-    public List<Review> filterByMinimumOverallScore(double minimumScore) {
-        return reviews.stream()
-                .filter(review -> review.getRating().getOverallScore() >= minimumScore)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Returns a new list of reviews sorted by overall score in descending order.
-     *
-     * @return a new list of reviews sorted by overall score in descending order.
-     */
-    public List<Review> sortByDescendingOverallScore() {
-        return reviews.stream()
-                .sorted(Comparator.comparingDouble(
-                        (Review review) -> review.getRating().getOverallScore())
-                        .reversed())
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Returns a new list of reviews sorted by overall score in ascending order.
-     *
-     * @return a new list of reviews sorted by overall score in ascending order.
-     */
-    public List<Review> sortByAscendingOverallScore() {
-        return reviews.stream()
-                .sorted(Comparator.comparingDouble(
-                                (Review review) -> review.getRating().getOverallScore())
+    public ReviewList filter(
+            Set<Tag> tagsToInclude,
+            Set<Tag> tagsToExclude,
+            Set<Condition> filterConditions,
+            Boolean isResolved
+    ) {
+        //runs the list through all the filters available, default or not
+        //default values should not affect results if not specified
+        List<Review> filteredReviews = reviews.stream()
+                //check if the review matches ALL required tags
+                .filter(review -> review.containsAllMatchingTags(tagsToInclude))
+                //check if the review matches NONE of the excluded tags
+                .filter(review -> review.containsNoMatchingTags(tagsToExclude))
+                //check if we should check by resolved status, if so, then check if the review matches resolved status
+                .filter(review -> isResolved == null || review.isResolved() == isResolved)
+                //for each HOF, apply to the review and ensure that all reviews satisfy all conditions
+                .filter(review ->
+                        filterConditions.stream()
+                                .allMatch(filterCriterionFunction ->
+                                        filterCriterionFunction.isSatisfiedBy(review)
+                                )
                 )
-                .collect(Collectors.toList());
+                .toList();
+
+        return new ReviewList(filteredReviews);
+    }
+
+    /**
+     * Sorts the given review list based on the given criterion and sort order.
+     *
+     * @param sortCriterion the criterion function to sort by
+     * @param sortOrder the sort order (ascending or descending)
+     * @param reviews the list of reviews to sort
+     * @return a new sorted list of reviews
+     * @throws InvalidArgumentException if the sort order is invalid
+     */
+    public ReviewList sort(
+            Criterion sortCriterion,
+            SortOrder sortOrder,
+            ReviewList reviews
+    ) throws InvalidArgumentException {
+        switch (sortOrder) {
+        case ASCENDING:
+            return reviews.sortByAscending(sortCriterion);
+        case DESCENDING:
+            return reviews.sortByDescending(sortCriterion);
+        case UNKNOWN:
+        default:
+            throw new InvalidArgumentException("Invalid sort order!");
+        }
+    }
+
+    /**
+     * Returns a new list of reviews sorted by the specified criterion in descending order.
+     *
+     * @param sortCriterion the criterion to sort by
+     * @return a new list of reviews sorted by the specified criterion in descending order.
+     */
+    private ReviewList sortByDescending(Criterion sortCriterion) {
+        List<Review> sortedList = reviews.stream()
+                .sorted(Comparator.comparing(sortCriterion.getFunction())
+                        .reversed())
+                .toList();
+        return new ReviewList(sortedList);
+    }
+
+    /**
+     * Returns a new list of reviews sorted by the specified criterion in ascending order.
+     *
+     * @param sortCriterion the criterion to sort by
+     * @return a new list of reviews sorted by the specified criterion in ascending order.
+     */
+    private ReviewList sortByAscending(Criterion sortCriterion) {
+        List<Review> sortedList = reviews.stream()
+                .sorted(Comparator.comparing(sortCriterion.getFunction()))
+                .toList();
+        return new ReviewList(sortedList);
     }
 
     /**
@@ -190,6 +218,14 @@ public class ReviewList {
     }
 
     /**
+     * Returns whether the list is empty.
+     * @return true if the list is empty, false otherwise
+     */
+    public boolean isEmpty() {
+        return reviews.isEmpty();
+    }
+
+    /**
      * Returns a string representation of the list of reviews.
      *
      * @return a formatted string representation of all reviews in the list
@@ -197,7 +233,7 @@ public class ReviewList {
     @Override
     public String toString() {
         if (reviews.isEmpty()) {
-            return "No reviews yet!";
+            return "Review list is empty.";
         }
 
         StringBuilder sb = new StringBuilder();

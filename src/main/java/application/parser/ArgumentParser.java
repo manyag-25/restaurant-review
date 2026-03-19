@@ -1,17 +1,7 @@
 package application.parser;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import application.exception.InvalidArgumentException;
 import application.exception.MissingArgumentException;
-import application.review.Rating;
-import application.review.Tag;
 
 /**
  * ArgumentParser class containing generic methods for parsing inputs.
@@ -40,6 +30,7 @@ public class ArgumentParser {
 
     /**
      * Checks if the specified string is null or empty.
+     *
      * @param string the string to check
      * @return true if the string is not null or empty, false otherwise
      */
@@ -81,7 +72,7 @@ public class ArgumentParser {
      */
     public static double toDouble(String scoreAsString) throws MissingArgumentException, InvalidArgumentException {
         if (!isValidString(scoreAsString)) {
-            throw new MissingArgumentException("No score given!");
+            throw new MissingArgumentException("No number given!");
         }
 
         double score;
@@ -89,82 +80,9 @@ public class ArgumentParser {
         try {
             score = Double.parseDouble(scoreAsString);
         } catch (NumberFormatException e) {
-            throw new InvalidArgumentException("Score provided is not a valid number!");
+            throw new InvalidArgumentException("Number provided is not a valid number!");
         }
 
         return score;
-    }
-
-    /**
-     * Return a Rating based on the three scores.
-     * @param foodScoreAsString the food score
-     * @param cleanlinessScoreAsString the cleanliness score
-     * @param serviceScoreAsString the service score
-     * @return a Rating object
-     * @throws MissingArgumentException if any score is empty or null
-     * @throws InvalidArgumentException if any score is not a number
-     */
-    public static Rating toRating(
-            String foodScoreAsString,
-            String cleanlinessScoreAsString,
-            String serviceScoreAsString
-    ) throws MissingArgumentException, InvalidArgumentException {
-        double foodScore = ArgumentParser.toDouble(foodScoreAsString);
-        double cleanlinessScore = ArgumentParser.toDouble(cleanlinessScoreAsString);
-        double serviceScore = ArgumentParser.toDouble(serviceScoreAsString);
-
-        return new Rating(foodScore, cleanlinessScore, serviceScore);
-    }
-
-    /**
-     * Returns a set of Tags based on a string of tags. An empty set is returned if the string is null or empty.
-     * @param tagsAsString the string of tags
-     * @return a set of Tag objects
-     */
-    public static Set<Tag> toTags(String tagsAsString) {
-        if (!isValidString(tagsAsString)) {
-            return new HashSet<>();
-        }
-
-        //separate tags in string format
-        String[] listOfTagsAsString = tagsAsString.trim().split(" ");
-
-        return Arrays.stream(listOfTagsAsString)
-                .map(Tag::new)
-                .collect(Collectors.toSet());
-    }
-
-    /**
-     * Parses a date string into a LocalDate object.
-     * @param dateAsString the date string to parse
-     * @return a LocalDate object representing the date
-     * @throws MissingArgumentException if the date string is empty or null
-     * @throws InvalidArgumentException if the date string is not in the correct format
-     */
-    public static LocalDate toDate(String dateAsString) throws MissingArgumentException, InvalidArgumentException {
-        if (!isValidString(dateAsString)) {
-            throw new MissingArgumentException("No date provided!"
-                    + "Expected format: YYYY-MM-DD");
-        }
-
-        LocalDate date;
-
-        try {
-            date = LocalDate.parse(dateAsString);
-        } catch (DateTimeParseException e) {
-            throw new InvalidArgumentException("Invalid date format!"
-                    + "Expected format: YYYY-MM-DD");
-        }
-
-        return date;
-    }
-
-    /**
-     * Formats a LocalDate object into a specific String format.
-     * @param date the LocalDate object to format
-     * @return a formatted String representing the date
-     */
-    public static String formatDate(LocalDate date) {
-        return date.format(DateTimeFormatter.ofPattern("EEE, dd LLL yyyy"));
     }
 }

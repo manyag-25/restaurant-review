@@ -11,7 +11,9 @@ public enum CommandType {
     ADD_TAG("addtag"),
     DELETE_TAG("deletetag"),
     DELETE("delete"),
+    FILTER("filter"),
     LIST("list"),
+    SORT("sort"),
     UNKNOWN("unknown");
 
     private final String commandString;
@@ -37,7 +39,7 @@ public enum CommandType {
         }
 
         for (CommandType type : CommandType.values()) {
-            if (type.commandString.startsWith(input)) {
+            if (type.commandString.equals(input)) {
                 return type;
             }
         }

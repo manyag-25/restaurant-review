@@ -9,12 +9,13 @@ import application.storage.Storage;
 public class ListReviewsCommand extends Command {
     /**
      * Returns a string representation of the review list.
-     * @param reviewList the list of reviews
+     *
+     * @param reviews the list of reviews
      * @param storage the storage object
      * @return a string representation of the review list
      */
     @Override
-    public String execute(ReviewList reviewList, Storage storage) {
-        return reviewList.toString();
+    public String execute(ReviewList reviews, Storage storage) {
+        return reviews.toString();
     }
 }

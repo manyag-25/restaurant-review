@@ -11,17 +11,29 @@ import application.storage.Storage;
 import java.util.Map;
 import java.util.Set;
 
-public class DeleteTagCommand extends Command {
+public class DeleteTagsCommand extends Command {
     public static final Set<String> DELIMITERS = Set.of("/default", "/tag");
-    private final Map<String, String> commandArgs;
+    private final int index;
+    private final Set<Tag> tagsToDelete;
 
     /**
      * Constructor for DeleteTagCommand class.
      *
      * @param commandArgs the arguments of the command
+     * @throws InvalidArgumentException if the index is not a number
+     * @throws MissingArgumentException if the index is missing
      */
-    public DeleteTagCommand(Map<String, String> commandArgs) {
-        this.commandArgs = commandArgs;
+    public DeleteTagsCommand(Map<String, String> commandArgs)
+            throws InvalidArgumentException, MissingArgumentException {
+        String indexAsString = commandArgs.get("/default");
+        String tagsAsString = commandArgs.get("/tag");
+
+        this.index = ArgumentParser.toInt(indexAsString);
+        this.tagsToDelete = Tag.toTags(tagsAsString);
+
+        if (tagsToDelete.isEmpty()) {
+            throw new InvalidArgumentException("No tags provided!");
+        }
     }
 
 
@@ -32,29 +44,18 @@ public class DeleteTagCommand extends Command {
      * Tags that do not exist in the review are not deleted.
      * </p>
      *
-     * @param reviewList the list of reviews
+     * @param reviews the list of reviews
      * @param storage the storage object
      * @return a string representation of the command result
-     * @throws MissingArgumentException if any argument is missing
      * @throws InvalidArgumentException if any argument is in the wrong format
      */
     @Override
     public String execute(
-            ReviewList reviewList,
+            ReviewList reviews,
             Storage storage
-    ) throws MissingArgumentException, InvalidArgumentException {
-        String indexAsString = commandArgs.get("/default");
-        String tagsAsString = commandArgs.get("/tag");
-
-        int index = ArgumentParser.toInt(indexAsString);
-        Set<Tag> tagsToDelete = ArgumentParser.toTags(tagsAsString);
-
-        if (tagsToDelete.isEmpty()) {
-            throw new InvalidArgumentException("No tags provided!");
-        }
-
+    ) throws InvalidArgumentException {
         //get the review object and its tags
-        Review review = reviewList.getReview(index);
+        Review review = reviews.getReview(index);
 
         //get the new tags that are already in the review
         Set<Tag> existingTags = review.getMatchingTags(tagsToDelete);
