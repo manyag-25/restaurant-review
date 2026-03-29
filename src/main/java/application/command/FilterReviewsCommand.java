@@ -49,6 +49,11 @@ public class FilterReviewsCommand extends Command {
         this.isResolved = isResolvedAsString == null ? null : Boolean.parseBoolean(isResolvedAsString);
     }
 
+    @Override
+    public boolean requiresOwnerAuthentication() {
+        return true;
+    }
+
     /**
      * Executes the command to filter the list of reviews.
      * @param reviews the list of reviews to filter

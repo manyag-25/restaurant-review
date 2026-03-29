@@ -40,6 +40,11 @@ public class AddTagsCommand extends Command {
         }
     }
 
+    @Override
+    public boolean requiresOwnerAuthentication() {
+        return true;
+    }
+
     /**
      * Executes the command to add tags to a review.
      *

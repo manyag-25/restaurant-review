@@ -7,6 +7,11 @@ import application.storage.Storage;
  * Class representing a command to list all reviews.
  */
 public class ListReviewsCommand extends Command {
+    @Override
+    public boolean requiresOwnerAuthentication() {
+        return true;
+    }
+
     /**
      * Returns a string representation of the review list.
      *

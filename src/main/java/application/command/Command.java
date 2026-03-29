@@ -20,6 +20,15 @@ public abstract class Command {
     }
 
     /**
+     * Returns whether this command requires owner authentication.
+     *
+     * @return true if owner authentication is required, false otherwise
+     */
+    public boolean requiresOwnerAuthentication() {
+        return false;
+    }
+
+    /**
      * Abstract generic execute method for all commands to complete their specified actions.
      *
      * @param reviews the list of reviews
