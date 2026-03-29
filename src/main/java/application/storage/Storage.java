@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,20 +59,31 @@ public class Storage {
      * @throws IOException if file operations fail
      */
     public ReviewList loadReviews() throws IOException {
+        return loadReviewsWithWarnings().reviewList();
+    }
+
+    /**
+     * Loads reviews from storage and returns non-fatal loading warnings.
+     *
+     * @return storage load result containing reviews and warnings
+     * @throws IOException if file operations fail
+     */
+    public StorageLoadResult loadReviewsWithWarnings() throws IOException {
         ensureStorageFileExists();
 
         List<String> lines = Files.readAllLines(storageFilePath, StandardCharsets.UTF_8);
+        List<String> warnings = new ArrayList<>();
 
         if (lines.isEmpty()) {
             writeHeaderOnly();
-            return new ReviewList();
+            return new StorageLoadResult(new ReviewList(), Collections.emptyList());
         }
 
         int startIndex = 0;
         if (STORAGE_HEADER.equals(lines.get(0))) {
             startIndex = 1;
         } else {
-            System.err.println("Warning: Storage header missing or invalid. Attempting best-effort load.");
+            warnings.add("Storage header missing or invalid. Attempting best-effort load.");
         }
 
         List<Review> loadedReviews = new ArrayList<>();
@@ -81,7 +93,7 @@ public class Storage {
             String line = lines.get(i);
 
             if (REVIEW_SEPARATOR.equals(line)) {
-                parseAndAddBlock(currentBlock, loadedReviews);
+                parseAndAddBlock(currentBlock, loadedReviews, warnings);
                 currentBlock.clear();
                 continue;
             }
@@ -93,8 +105,8 @@ public class Storage {
             currentBlock.add(line);
         }
 
-        parseAndAddBlock(currentBlock, loadedReviews);
-        return new ReviewList(loadedReviews);
+        parseAndAddBlock(currentBlock, loadedReviews, warnings);
+        return new StorageLoadResult(new ReviewList(loadedReviews), Collections.unmodifiableList(warnings));
     }
 
     /**
@@ -127,7 +139,7 @@ public class Storage {
                 StandardOpenOption.CREATE);
     }
 
-    private void parseAndAddBlock(List<String> blockLines, List<Review> loadedReviews) {
+    private void parseAndAddBlock(List<String> blockLines, List<Review> loadedReviews, List<String> warnings) {
         if (blockLines.isEmpty()) {
             return;
         }
@@ -136,7 +148,7 @@ public class Storage {
             Review review = parseReviewBlock(blockLines);
             loadedReviews.add(review);
         } catch (InvalidArgumentException | IllegalArgumentException e) {
-            System.err.println("Warning: Skipped malformed review block. " + e.getMessage());
+            warnings.add("Skipped malformed review block. " + e.getMessage());
         }
     }
 
