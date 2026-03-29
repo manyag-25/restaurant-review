@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "MealMeter (Gradle run)",
+      "runtimeExecutable": "./gradlew",
+      "runtimeArgs": ["run"],
+      "port": 0
+    },
+    {
+      "name": "UI-Unlinked JavaFX kiosk (compile + run)",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["/Users/manya/Desktop/academic repos/restaurant-review/UI-Unlinked/compile.sh"],
+      "port": 0
+    }
+  ]
+}
