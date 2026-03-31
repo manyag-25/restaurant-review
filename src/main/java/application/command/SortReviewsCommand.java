@@ -3,6 +3,7 @@ package application.command;
 import java.util.Map;
 import java.util.Set;
 
+import application.auth.AuthManager;
 import application.exception.InvalidArgumentException;
 import application.review.Criterion;
 import application.review.ReviewList;
@@ -36,13 +37,15 @@ public class SortReviewsCommand extends Command {
      *
      * @param reviews the list of reviews
      * @param storage the storage object
+     * @param manager the authentication manager
      * @return a string representation of the command result
      * @throws InvalidArgumentException if any argument is in the wrong format
      */
     @Override
     public String execute(
             ReviewList reviews,
-            Storage storage
+            Storage storage,
+            AuthManager manager
     ) throws InvalidArgumentException {
         if (reviews.isEmpty()) {
             return "No reviews to sort!";

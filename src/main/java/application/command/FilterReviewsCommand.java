@@ -3,6 +3,7 @@ package application.command;
 import java.util.Map;
 import java.util.Set;
 
+import application.auth.AuthManager;
 import application.condition.Condition;
 import application.exception.InvalidArgumentException;
 import application.exception.MissingArgumentException;
@@ -53,10 +54,15 @@ public class FilterReviewsCommand extends Command {
      * Executes the command to filter the list of reviews.
      * @param reviews the list of reviews to filter
      * @param storage the storage object
+     * @param manager the authentication manager
      * @return a string representation of the filtered list of reviews
      */
     @Override
-    public String execute(ReviewList reviews, Storage storage) throws InvalidArgumentException {
+    public String execute(
+            ReviewList reviews,
+            Storage storage,
+            AuthManager manager
+    ) throws InvalidArgumentException {
         ReviewList filteredReviews = reviews.filter(
                 tagsToInclude,
                 tagsToExclude,

@@ -13,6 +13,8 @@ public enum CommandType {
     DELETE("delete"),
     FILTER("filter"),
     LIST("list"),
+    LOGIN("login"),
+    LOGOUT("logout"),
     RESOLVE("resolve"),
     UNRESOLVE("unresolve"),
     SORT("sort"),

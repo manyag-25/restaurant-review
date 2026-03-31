@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 
+import application.auth.AuthManager;
 import application.exception.InvalidArgumentException;
 import application.exception.MissingArgumentException;
 import application.parser.ArgumentParser;
@@ -51,13 +52,15 @@ public class AddReviewCommand extends Command {
      *
      * @param reviews the list of reviews
      * @param storage the storage object
+     * @param manager the authentication manager
      * @return a string representation of the command result
      * @throws InvalidArgumentException if any argument is in the wrong format
      */
     @Override
     public String execute(
             ReviewList reviews,
-            Storage storage
+            Storage storage,
+            AuthManager manager
     ) throws InvalidArgumentException, IOException {
         Rating rating = new Rating(foodScore, cleanlinessScore, serviceScore);
         Review review = new Review(reviewBody, rating, tagsToAdd);

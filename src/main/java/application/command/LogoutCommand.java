@@ -5,16 +5,15 @@ import application.review.ReviewList;
 import application.storage.Storage;
 
 /**
- * Class representing an unknown command.
+ * Class representing a command to log out.
  */
-public class UnknownCommand extends Command {
+public class LogoutCommand extends Command{
     /**
-     * Returns a message indicating that the command is unknown.
-     *
+     * Executes the logout command.
      * @param reviews the list of reviews
      * @param storage the storage object
      * @param manager the authentication manager
-     * @return a string indicating that the command is unknown
+     * @return a string indicating the result of the logout command
      */
     @Override
     public String execute(
@@ -22,6 +21,11 @@ public class UnknownCommand extends Command {
             Storage storage,
             AuthManager manager
     ) {
-        return "I'm sorry, I don't understand that command.";
+        if (manager.isOwnerAuthenticated()) {
+            manager.logout();
+            return "Successfully logged out!";
+        }
+
+        return "You are not logged in!";
     }
 }
