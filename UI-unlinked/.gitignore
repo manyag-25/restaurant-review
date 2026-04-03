@@ -1,0 +1,17 @@
+# Compiled class files
+*.class
+application/
+out/
+
+# Gradle build output
+.gradle/
+build/
+
+# Node artifacts (no longer needed)
+node_modules/
+package.json
+package-lock.json
+create_mapping_doc.js
+
+# Claude tooling artifacts
+.claude/

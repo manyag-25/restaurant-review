@@ -1,0 +1,8 @@
+MEALMETER_V1
+food=4.0
+cleanliness=5.0
+service=3.0
+resolved=false
+tags=
+body=Test 123
+---
