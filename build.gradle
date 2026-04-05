@@ -58,7 +58,7 @@ shadowJar {
     }
 }
 
-// Create a separate GUI JAR task
+// GUI fat-JAR: launches MealMeterGUI directly
 task guiJar(type: com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
     from sourceSets.main.output
     configurations = [project.configurations.runtimeClasspath]
@@ -68,6 +68,9 @@ task guiJar(type: com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
         attributes 'Main-Class': 'application.ui.MealMeterGUI'
     }
 }
+
+// Produce both JARs whenever `./gradlew build` or `./gradlew assemble` is run
+assemble.dependsOn guiJar
 
 run {
     standardInput = System.in
