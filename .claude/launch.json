@@ -2,15 +2,15 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "MealMeter (Gradle run)",
+      "name": "MealMeter CLI (Gradle run)",
       "runtimeExecutable": "./gradlew",
       "runtimeArgs": ["run"],
       "port": 0
     },
     {
-      "name": "UI-Unlinked JavaFX kiosk (compile + run)",
-      "runtimeExecutable": "bash",
-      "runtimeArgs": ["/Users/manya/Desktop/academic repos/restaurant-review/UI-Unlinked/compile.sh"],
+      "name": "MealMeter GUI (Gradle run)",
+      "runtimeExecutable": "./gradlew",
+      "runtimeArgs": ["run", "-PmainClass=application.ui.MealMeterGUI"],
       "port": 0
     }
   ]
