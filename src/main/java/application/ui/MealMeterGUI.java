@@ -1,6 +1,7 @@
 package application.ui;
 
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -12,37 +13,41 @@ import javax.swing.JTabbedPane;
 import javax.swing.SwingUtilities;
 import javax.swing.plaf.basic.BasicTabbedPaneUI;
 
-import application.auth.AuthManager;
+import application.CommandResult;
+import application.MealMeter;
 import application.condition.Condition;
+import application.condition.GreaterThanOrEqualsToCondition;
 import application.exception.InvalidArgumentException;
-import application.exception.MissingArgumentException;
 import application.parser.ConditionParser;
 import application.review.Criterion;
 import application.review.Review;
 import application.review.ReviewList;
 import application.review.SortOrder;
 import application.review.Tag;
-import application.storage.Storage;
 
 /**
  * Main GUI window for MealMeter. Coordinates between patron and owner panels,
- * delegates UI events to backend operations.
+ * forwarding all events to the backend via MealMeter.handleInput().
+ *
+ * <p>The GUI contains no business logic. All operations are expressed as
+ * command strings passed to the backend (MVC controller layer).</p>
  */
 // CHECKSTYLE.OFF: AbbreviationAsWordInName - "GUI" is an established acronym for this class
 public class MealMeterGUI extends JFrame implements
         PatronPanel.PatronPanelListener, OwnerPanel.OwnerPanelListener {
+    // CHECKSTYLE.ON: AbbreviationAsWordInName
 
     private static final int WINDOW_WIDTH = 1100;
     private static final int WINDOW_HEIGHT = 750;
-    private static final String OWNER_PASSWORD = "password";
-    private static final String TITLE = "MealMeter - Restaurant Feedback System";
     private static final int PATRON_TAB_INDEX = 0;
     private static final int OWNER_TAB_INDEX = 1;
 
-    private final Storage storage;
-    private final AuthManager authManager;
-    private final ReviewList reviewList;
+    /** Single backend entry point — no Storage, AuthManager or ReviewList held directly. */
+    private final MealMeter mealMeter;
+
+    /** Current subset shown in the owner table (may differ from master list after filter/sort). */
     private ReviewList currentDisplayList;
+
     private final JTabbedPane tabbedPane;
     private final PatronPanel patronPanel;
     private final OwnerPanel ownerPanel;
@@ -51,22 +56,10 @@ public class MealMeterGUI extends JFrame implements
      * Constructs and displays the MealMeterGUI window.
      */
     public MealMeterGUI() {
-        this.storage = new Storage();
-        this.authManager = new AuthManager(OWNER_PASSWORD);
+        this.mealMeter = new MealMeter();
+        this.currentDisplayList = mealMeter.getReviewList();
 
-        ReviewList loaded = new ReviewList();
-        try {
-            loaded = storage.loadReviews();
-        } catch (IOException e) {
-            JOptionPane.showMessageDialog(null,
-                    "Could not load saved reviews: " + e.getMessage()
-                    + "\nStarting with an empty list.",
-                    "Storage Warning", JOptionPane.WARNING_MESSAGE);
-        }
-        this.reviewList = loaded;
-        this.currentDisplayList = reviewList;
-
-        setTitle(TITLE);
+        setTitle("MealMeter - Restaurant Feedback System");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
         setLocationRelativeTo(null);
@@ -83,109 +76,96 @@ public class MealMeterGUI extends JFrame implements
 
         tabbedPane.addChangeListener(e -> {
             if (tabbedPane.getSelectedIndex() == OWNER_TAB_INDEX
-                    && !authManager.isOwnerAuthenticated()) {
+                    && !mealMeter.isOwnerAuthenticated()) {
                 promptOwnerLogin();
             }
         });
 
         add(tabbedPane);
+
+        // Show any storage warnings from startup
+        for (String warning : mealMeter.getStartupStorageWarnings()) {
+            JOptionPane.showMessageDialog(null, warning, "Storage Warning",
+                    JOptionPane.WARNING_MESSAGE);
+        }
+        if (mealMeter.hasStorageLoadFailure()) {
+            JOptionPane.showMessageDialog(null,
+                    "Could not load saved reviews. Starting with an empty list.",
+                    "Storage Warning", JOptionPane.WARNING_MESSAGE);
+        }
+
         setVisible(true);
     }
 
-    @Override
-    public void onReviewSubmitted(Review review) {
-        reviewList.addReview(review);
-        saveOrWarn();
+    // ── PatronPanelListener ─────────────────────────────────────────────────
 
-        if (authManager.isOwnerAuthenticated()) {
-            currentDisplayList = reviewList;
+    @Override
+    public String onReviewSubmitted(String body, double food, double clean,
+                                    double service, List<String> tags) {
+        String cmd = String.format("review %s /food %.1f /clean %.1f /service %.1f",
+                body, food, clean, service);
+        if (!tags.isEmpty()) {
+            cmd += " /tag " + String.join(",", tags);
+        }
+
+        CommandResult result = mealMeter.handleInput(cmd);
+
+        // Auto-refresh owner table if logged in
+        if (mealMeter.isOwnerAuthenticated()) {
+            currentDisplayList = mealMeter.getReviewList();
             ownerPanel.refreshTable(currentDisplayList.getAllReviews());
         }
+
+        return result.output();
     }
+
+    // ── OwnerPanelListener ──────────────────────────────────────────────────
 
     @Override
     public void onFilterApplied(String includeTags, String excludeTags, String status,
                                 double minRating, String conditions) {
-        try {
-            Set<Tag> includeSet = includeTags.isEmpty() ? new HashSet<>() : Tag.toTags(includeTags);
-            Set<Tag> excludeSet = excludeTags.isEmpty() ? new HashSet<>() : Tag.toTags(excludeTags);
+        String cmd = buildFilterCommand(includeTags, excludeTags, status, minRating, conditions);
+        CommandResult result = mealMeter.handleInput(cmd);
 
-            Boolean isResolved = null;
-            if ("Resolved".equals(status)) {
-                isResolved = true;
-            } else if ("Outstanding".equals(status)) {
-                isResolved = false;
-            }
+        JOptionPane.showMessageDialog(this, result.output(), "Filter Applied",
+                JOptionPane.INFORMATION_MESSAGE);
 
-            Set<Condition> conditionSet = new HashSet<>();
-            if (minRating > 1.0) {
-                conditionSet.add(new application.condition.GreaterThanOrEqualsToCondition(
-                        Criterion.OVERALL_SCORE, minRating));
-            }
-
-            if (!conditions.isEmpty()) {
-                conditionSet.addAll(ConditionParser.getConditions(conditions));
-            }
-
-            currentDisplayList = reviewList.filter(includeSet, excludeSet, conditionSet, isResolved);
-            ownerPanel.refreshTable(currentDisplayList.getAllReviews());
-
-            JOptionPane.showMessageDialog(this,
-                    "Filter applied. Showing " + currentDisplayList.size() + " review(s).",
-                    "Filter", JOptionPane.INFORMATION_MESSAGE);
-        } catch (InvalidArgumentException | MissingArgumentException e) {
-            JOptionPane.showMessageDialog(this,
-                    "Filter error: " + e.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
-        }
+        // Re-derive the display list with the same command so the table stays filtered
+        refreshDisplayAfterFilter(includeTags, excludeTags, status, minRating, conditions);
     }
 
     @Override
     public void onSortApplied(String sortBy, String sortOrder) {
-        try {
-            Criterion criterion = mapSortByCriterion(sortBy);
-            SortOrder order = "Descending".equals(sortOrder) ? SortOrder.DESCENDING : SortOrder.ASCENDING;
+        String criterionArg = mapSortByToCriterionArg(sortBy);
+        String orderArg = sortOrder.toLowerCase();
+        CommandResult result = mealMeter.handleInput("sort " + orderArg + " /by " + criterionArg);
 
-            currentDisplayList = reviewList.sort(criterion, order, currentDisplayList);
-            ownerPanel.refreshTable(currentDisplayList.getAllReviews());
+        JOptionPane.showMessageDialog(this, result.output(), "Sort Applied",
+                JOptionPane.INFORMATION_MESSAGE);
 
-            JOptionPane.showMessageDialog(this,
-                    "Sorted by " + sortBy + " (" + sortOrder + ").",
-                    "Sort Applied", JOptionPane.INFORMATION_MESSAGE);
-        } catch (InvalidArgumentException e) {
-            JOptionPane.showMessageDialog(this, "Sort error: " + e.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
-        }
+        refreshDisplayAfterSort(sortBy, sortOrder);
     }
 
     @Override
     public void onResolveReview(int rowIndex) {
-        try {
-            Review review = currentDisplayList.getReview(rowIndex);
-            review.markResolved();
-            saveOrWarn();
-            ownerPanel.refreshTable(currentDisplayList.getAllReviews());
-            JOptionPane.showMessageDialog(this, "Marked as Resolved.", "Done",
-                    JOptionPane.INFORMATION_MESSAGE);
-        } catch (InvalidArgumentException e) {
-            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
+        int masterIdx = masterIndexOf(currentDisplayList, rowIndex);
+        if (masterIdx < 0) {
+            return;
         }
+        CommandResult result = mealMeter.handleInput("resolve " + masterIdx);
+        JOptionPane.showMessageDialog(this, result.output(), "Resolve", JOptionPane.INFORMATION_MESSAGE);
+        ownerPanel.refreshTable(currentDisplayList.getAllReviews());
     }
 
     @Override
     public void onUnresolveReview(int rowIndex) {
-        try {
-            Review review = currentDisplayList.getReview(rowIndex);
-            review.markOutstanding();
-            saveOrWarn();
-            ownerPanel.refreshTable(currentDisplayList.getAllReviews());
-            JOptionPane.showMessageDialog(this, "Marked as Outstanding.", "Done",
-                    JOptionPane.INFORMATION_MESSAGE);
-        } catch (InvalidArgumentException e) {
-            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
+        int masterIdx = masterIndexOf(currentDisplayList, rowIndex);
+        if (masterIdx < 0) {
+            return;
         }
+        CommandResult result = mealMeter.handleInput("unresolve " + masterIdx);
+        JOptionPane.showMessageDialog(this, result.output(), "Unresolve", JOptionPane.INFORMATION_MESSAGE);
+        ownerPanel.refreshTable(currentDisplayList.getAllReviews());
     }
 
     @Override
@@ -193,7 +173,7 @@ public class MealMeterGUI extends JFrame implements
         try {
             Review review = currentDisplayList.getReview(rowIndex);
             String currentTags = review.getTags().stream()
-                    .map(Tag::getTagName)
+                    .map(t -> t.getTagName())
                     .sorted()
                     .collect(Collectors.joining(", "));
 
@@ -207,19 +187,21 @@ public class MealMeterGUI extends JFrame implements
                 return;
             }
 
-            String trimmed = input.trim();
-            if (trimmed.startsWith("-")) {
-                String tagName = trimmed.substring(1).trim();
-                review.removeTag(new Tag(tagName));
-                JOptionPane.showMessageDialog(this, "Tag removed.", "Done",
-                        JOptionPane.INFORMATION_MESSAGE);
-            } else {
-                review.addTag(new Tag(trimmed));
-                JOptionPane.showMessageDialog(this, "Tag added.", "Done",
-                        JOptionPane.INFORMATION_MESSAGE);
+            int masterIdx = masterIndexOf(currentDisplayList, rowIndex);
+            if (masterIdx < 0) {
+                return;
             }
 
-            saveOrWarn();
+            String trimmed = input.trim();
+            CommandResult result;
+            if (trimmed.startsWith("-")) {
+                String tagName = trimmed.substring(1).trim();
+                result = mealMeter.handleInput("deletetag " + masterIdx + " /tag " + tagName);
+            } else {
+                result = mealMeter.handleInput("addtag " + masterIdx + " /tag " + trimmed);
+            }
+
+            JOptionPane.showMessageDialog(this, result.output(), "Tags", JOptionPane.INFORMATION_MESSAGE);
             ownerPanel.refreshTable(currentDisplayList.getAllReviews());
         } catch (InvalidArgumentException e) {
             JOptionPane.showMessageDialog(this, "Error: " + e.getMessage(),
@@ -236,25 +218,23 @@ public class MealMeterGUI extends JFrame implements
             return;
         }
 
+        int masterIdx = masterIndexOf(currentDisplayList, rowIndex);
+        if (masterIdx < 0) {
+            return;
+        }
+
         try {
             Review toDelete = currentDisplayList.getReview(rowIndex);
-            int masterIdx = masterIndexOf(toDelete);
-            if (masterIdx == -1) {
-                JOptionPane.showMessageDialog(this, "Review not found in master list.",
-                        "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            reviewList.deleteReview(masterIdx);
+            CommandResult result = mealMeter.handleInput("delete " + masterIdx);
+            JOptionPane.showMessageDialog(this, result.output(), "Delete",
+                    JOptionPane.INFORMATION_MESSAGE);
 
+            // Remove from display list too so table stays consistent
             List<Review> remaining = currentDisplayList.getAllReviews().stream()
                     .filter(r -> r != toDelete)
                     .collect(Collectors.toList());
             currentDisplayList = new ReviewList(remaining);
-
-            saveOrWarn();
             ownerPanel.refreshTable(currentDisplayList.getAllReviews());
-            JOptionPane.showMessageDialog(this, "Review deleted.", "Done",
-                    JOptionPane.INFORMATION_MESSAGE);
         } catch (InvalidArgumentException e) {
             JOptionPane.showMessageDialog(this, "Error: " + e.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
@@ -263,34 +243,36 @@ public class MealMeterGUI extends JFrame implements
 
     @Override
     public void onRefresh() {
-        currentDisplayList = reviewList;
+        currentDisplayList = mealMeter.getReviewList();
         ownerPanel.refreshTable(currentDisplayList.getAllReviews());
-        JOptionPane.showMessageDialog(this, "Refreshed.", "Done",
-                JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane.showMessageDialog(this, "Refreshed.", "Done", JOptionPane.INFORMATION_MESSAGE);
     }
 
     @Override
     public void onLogout() {
-        authManager.logout();
-        JOptionPane.showMessageDialog(this, "You have been logged out.", "Logout Successful",
+        CommandResult result = mealMeter.handleInput("logout");
+        JOptionPane.showMessageDialog(this, result.output(), "Logout",
                 JOptionPane.INFORMATION_MESSAGE);
         tabbedPane.setSelectedIndex(PATRON_TAB_INDEX);
     }
 
+    // ── Private helpers ──────────────────────────────────────────────────────
+
     private void promptOwnerLogin() {
         JPasswordField pwField = new JPasswordField(15);
         Object[] msg = {"Owner Password:", pwField};
-        int result = JOptionPane.showConfirmDialog(this, msg, "Owner Login",
+        int option = JOptionPane.showConfirmDialog(this, msg, "Owner Login",
                 JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 
-        if (result == JOptionPane.OK_OPTION) {
+        if (option == JOptionPane.OK_OPTION) {
             String entered = new String(pwField.getPassword());
-            if (authManager.authenticateOwner(entered)) {
+            CommandResult result = mealMeter.handleInput("login " + entered);
+            if (mealMeter.isOwnerAuthenticated()) {
                 ownerPanel.refreshTable(currentDisplayList.getAllReviews());
-                JOptionPane.showMessageDialog(this, "Welcome, Owner!", "Login Successful",
+                JOptionPane.showMessageDialog(this, result.output(), "Login Successful",
                         JOptionPane.INFORMATION_MESSAGE);
             } else {
-                JOptionPane.showMessageDialog(this, "Incorrect password.", "Access Denied",
+                JOptionPane.showMessageDialog(this, result.output(), "Access Denied",
                         JOptionPane.ERROR_MESSAGE);
                 tabbedPane.setSelectedIndex(PATRON_TAB_INDEX);
             }
@@ -299,24 +281,156 @@ public class MealMeterGUI extends JFrame implements
         }
     }
 
-    private void saveOrWarn() {
+    /**
+     * Returns the 1-based master-list index of the review at rowIndex in the display list.
+     * Uses reference equality since filter() returns the same Review objects.
+     */
+    private int masterIndexOf(ReviewList displayList, int rowIndex) {
         try {
-            storage.saveReviews(reviewList);
-        } catch (IOException e) {
-            JOptionPane.showMessageDialog(this,
-                    "Could not save reviews: " + e.getMessage(),
-                    "Save Error", JOptionPane.ERROR_MESSAGE);
+            Review displayed = displayList.getReview(rowIndex);
+            List<Review> all = mealMeter.getReviewList().getAllReviews();
+            for (int i = 0; i < all.size(); i++) {
+                if (all.get(i) == displayed) {
+                    return i + 1;
+                }
+            }
+        } catch (InvalidArgumentException e) {
+            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+        return -1;
+    }
+
+    /**
+     * Builds the filter command string from the panel's form inputs.
+     */
+    private String buildFilterCommand(String includeTags, String excludeTags, String status,
+                                      double minRating, String conditions) {
+        StringBuilder cmd = new StringBuilder("filter");
+
+        if (!includeTags.isEmpty()) {
+            cmd.append(" /hastag ").append(includeTags);
+        }
+        if (!excludeTags.isEmpty()) {
+            cmd.append(" /notag ").append(excludeTags);
+        }
+        if ("Resolved".equals(status)) {
+            cmd.append(" /resolved true");
+        } else if ("Outstanding".equals(status)) {
+            cmd.append(" /resolved false");
+        }
+
+        List<String> condParts = new ArrayList<>();
+        if (minRating > 1.0) {
+            condParts.add(String.format("overall >= %.1f", minRating));
+        }
+        if (!conditions.isEmpty()) {
+            condParts.add(conditions);
+        }
+        if (!condParts.isEmpty()) {
+            cmd.append(" /condition ").append(String.join(", ", condParts));
+        }
+
+        return cmd.toString();
+    }
+
+    /**
+     * Re-runs the filter via MealMeter and updates the display list.
+     * Called after a successful filter to keep the table showing filtered results.
+     */
+    private void refreshDisplayAfterFilter(String includeTags, String excludeTags, String status,
+                                           double minRating, String conditions) {
+        String cmd = buildFilterCommand(includeTags, excludeTags, status, minRating, conditions);
+        CommandResult recheck = mealMeter.handleInput(cmd);
+
+        // Only update the display if the command succeeded (no error output)
+        if (!recheck.output().toLowerCase().contains("error")
+                && !recheck.output().equals("Access denied. Please log in as the owner to use this command.")) {
+            // Derive the filtered list using the same parameters through the backend
+            currentDisplayList = deriveFilteredList(includeTags, excludeTags, status,
+                    minRating, conditions);
+        }
+        ownerPanel.refreshTable(currentDisplayList.getAllReviews());
+    }
+
+    /**
+     * Derives a filtered ReviewList from the master list using the form inputs.
+     * Tag strings use comma-separation matching the backend's Tag.toTags() format.
+     */
+    private ReviewList deriveFilteredList(String includeTags, String excludeTags, String status,
+                                          double minRating, String conditions) {
+        try {
+            Tag[] includeArr = parseTags(includeTags);
+            Tag[] excludeArr = parseTags(excludeTags);
+
+            Set<Tag> includeSet = new HashSet<>(Arrays.asList(includeArr));
+            Set<Tag> excludeSet = new HashSet<>(Arrays.asList(excludeArr));
+
+            Boolean isResolved = null;
+            if ("Resolved".equals(status)) {
+                isResolved = true;
+            } else if ("Outstanding".equals(status)) {
+                isResolved = false;
+            }
+
+            Set<Condition> conditionSet = new HashSet<>();
+            if (minRating > 1.0) {
+                conditionSet.add(new GreaterThanOrEqualsToCondition(
+                        Criterion.OVERALL_SCORE, minRating));
+            }
+            if (!conditions.isEmpty()) {
+                conditionSet.addAll(ConditionParser.getConditions(conditions));
+            }
+
+            return mealMeter.getReviewList().filter(includeSet, excludeSet, conditionSet, isResolved);
+        } catch (Exception e) {
+            return mealMeter.getReviewList();
         }
     }
 
-    private int masterIndexOf(Review displayed) {
-        List<Review> all = reviewList.getAllReviews();
-        for (int i = 0; i < all.size(); i++) {
-            if (all.get(i) == displayed) {
-                return i + 1;
-            }
+    private Tag[] parseTags(String csv) {
+        if (csv == null || csv.isBlank()) {
+            return new Tag[0];
         }
-        return -1;
+        String[] parts = csv.split(",");
+        Tag[] tags = new Tag[parts.length];
+        for (int i = 0; i < parts.length; i++) {
+            tags[i] = new Tag(parts[i].trim());
+        }
+        return tags;
+    }
+
+    /**
+     * Re-runs the sort via MealMeter and updates the display list.
+     */
+    private void refreshDisplayAfterSort(String sortBy, String sortOrder) {
+        try {
+            Criterion criterion = mapSortByCriterion(sortBy);
+            SortOrder order = "Descending".equals(sortOrder)
+                    ? SortOrder.DESCENDING
+                    : SortOrder.ASCENDING;
+            currentDisplayList = mealMeter.getReviewList().sort(criterion, order,
+                    currentDisplayList);
+            ownerPanel.refreshTable(currentDisplayList.getAllReviews());
+        } catch (InvalidArgumentException e) {
+            JOptionPane.showMessageDialog(this, "Sort error: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private String mapSortByToCriterionArg(String sortBy) {
+        switch (sortBy) {
+        case "Food":
+            return "food";
+        case "Cleanliness":
+            return "clean";
+        case "Service":
+            return "service";
+        case "Tag Count":
+            return "tag";
+        default:
+            return "overall";
+        }
     }
 
     private Criterion mapSortByCriterion(String sortBy) {
@@ -334,10 +448,8 @@ public class MealMeterGUI extends JFrame implements
         }
     }
 
-    // CHECKSTYLE.ON: AbbreviationAsWordInName
-
     /**
-     * Custom tabbed pane UI for highlight styling.
+     * Custom tabbed pane UI that highlights the selected tab.
      */
     static class CustomTabbedPaneUI extends BasicTabbedPaneUI {
         @Override
